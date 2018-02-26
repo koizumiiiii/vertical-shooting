@@ -1,6 +1,5 @@
 (function() {
   'use strict';
-  // forked from suke009's "enchant.js - Lesson5" http://jsdo.it/suke009/QMS0
   /*
    * おまじない
    */
@@ -12,32 +11,22 @@
   // パラメータ
   var SCREEN_WIDTH = 320; // スクリーン幅
   var SCREEN_HEIGHT = 320; // スクリーン高
-  var BUG_MAX_NUM = 10; // 虫の数
-  var BUG_WIDTH = 32; // 虫の幅
-  var BUG_HEIGHT = 32; // 虫の高さ
-  var BUG_SPEED = 4; // 虫の移動スピード
-  var BUG_MOVE_TIME = 30; // 虫の移動時間
-  var BUG_WAIT_TIME = 30; // 虫の待ち時間
-
-  
+  // player
+  var PLAYER_WIDTH = 32;
+  var PLAYER_HEIGHT = 32;
+  var PLAYER_SPEED = 8;
   // 画像
-  var FIELD_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/floor.png';
-  var GOKIBURI_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/bug.png';
-  // 音
-  var MAIN_BGM = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/main_bgm.wav';
-  var CLEAE_BGM = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/clear_bgm.wav';
-  var CRY_SE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/cry.wav';
-  var TOUCH_SE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter03/touch.wav';
-  // アセットリスト
+  var PLAYER_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/player.png';
+  // アセット
   var ASSETS = [
-    FIELD_IMAGE, GOKIBURI_IMAGE,
-    MAIN_BGM, CLEAE_BGM, CRY_SE, TOUCH_SE
+    PLAYER_IMAGE
   ];
   
   /*
    * グローバル変数
    */
   var game = null;
+  var player = null;
   
   
   /*
@@ -61,61 +50,17 @@
     game.onload = function() {
       var scene = game.rootScene;
       scene.backgroundColor = "black";
-    
-      // 背景を生成、表示
-      var bg = new Sprite(SCREEN_WIDTH, SCREEN_HEIGHT);
-      bg.image = game.assets[FIELD_IMAGE];
-      scene.addChild(bg);
 
-      // 残りの数表示用ラベルの生成、表示
-      var numText = new Label('');
-      numText.font = `18px 'Meiryo', 'メイリオ'`;
-      numText.color = 'black';
-      numText.moveTo(10, 10);
-      scene.addChild(numText);
-
-      // シーン切替時の処理
-      scene.onenter = function() {
-        // フレームをリセット
-        game.frame = 0;
-
-        // 虫の数をセット
-        game.bugNum = BUG_MAX_NUM;
-
-        // 虫を生成
-        for (var i = 0; i < BUG_MAX_NUM; ++i) {
-          var gokiburi = new Gokiburi();
-          gokiburi.moveTo(randfloat(0, SCREEN_WIDTH - BUG_WIDTH),
-          randfloat(0, SCREEN_HEIGHT - BUG_HEIGHT));
-          scene.addChild(gokiburi);
-        }
-
-        // 叫び声
-        game.assets[CRY_SE].play();
-      }
-
+      // プレイヤーを生成、表示
+      player = new Player();
+      player.moveTo(SCREEN_WIDTH / 2 - PLAYER_WIDTH / 2, SCREEN_HEIGHT - PLAYER_HEIGHT);
+      scene.addChild(player);
 
       // シーン更新時の処理
       scene.onenterframe = function() {
-        // 残りの数表示用ラベル更新
-        numText.text = '残り:' + game.bugNum + '匹';
 
-        // BGM 再生
-        game.assets[MAIN_BGM].play();
-
-        // クリアチェック
-        if (game.bugNum <= 0) {
-          // BGM を切り替える
-          game.assets[MAIN_BGM].stop();
-          game.assets[CLEAE_BGM].play();
-          // ゲーム終了
-          var time = Math.floor(game.frame/game.fps);
-          var msg = time + '秒でクリアしました！';
-          game.end((60 - time) * 100, msg);
-        }
       };
     };
-
 
 
     game.start();
@@ -123,79 +68,55 @@
 
 
   /*
-   * ゴキブリクラス
+   * プレイヤー
    */
-  var Gokiburi = Class.create(Sprite, {
+  var Player = Class.create(Sprite, {
     // 初期化処理
     initialize: function() {
-      Sprite.call(this, 32, 32);
-      this.image = game.assets[GOKIBURI_IMAGE];
-      this.rotation = randfloat(0, 360);
-      this.timer = randfloat(0, BUG_MOVE_TIME);
-      // 移動処理をセット
-      this.update = this.move;
+      Sprite.call(this, PLAYER_WIDTH, PLAYER_HEIGHT);
+      this.image = game.assets[PLAYER_IMAGE];
+      this.frame = 0;
     },
-    // 移動処理
-    move: function() {
-      // 向いてる方向に移動
-      var angle = (this.rotation + 270) * Math.PI / 180;
-      this.x += Math.cos(angle) * BUG_SPEED;
-      this.y += Math.sin(angle) * BUG_SPEED;
-
-      // フレームアニメーション
-      this.frame = 1 - this.frame;
-
-      // 待ちモードに切り替える
-      if (this.timer > BUG_MOVE_TIME) {
-        this.timer = 0;
-        this.update = this.wait;
-      }
-    },
-    // 待ち処理
-    wait: function() {
-      // 移動モードに切り替える
-      if (this.timer > BUG_WAIT_TIME) {
-        this.rotation = randfloat(0, 360);
-        this.timer = 0;
-        this.update = this.move;
-      }
-    },
-    // 削除待ち
-    destroyWait: function() {
-      this.opacity = 1 - (this.timer/BUG_WAIT_TIME);
-      if (this.timer > BUG_WAIT_TIME) {
-        this.parentNode.removeChild(this);
-      }
-    },
-    // 更新処理
     onenterframe: function() {
-        // 更新処理実行
-        this.update();
+      var input = game.input;
+      var vx = 0, vy = 0;
 
-        // タイマー更新
-        this.timer += 1;
-
-        // 画面からはみ出ないように制御
-        var left = 0;
-        var right = SCREEN_WIDTH - this.width;
-        var top = 0;
-        var bottom = SCREEN_HEIGHT - this.height;
-
-        if (left > this.x) this.x = left;
-        else if (right < this.x) this.x = right;
-        if (top > this.y) this.y = top;
-        else if (bottom < this.y) this.y = bottom;
-      },
-      // タッチ開始時処理
-      ontouchstart: function() {
-        this.timer = 0;
+      // 左右移動値を計算
+      if (input.left == true) {
+        vx = -PLAYER_SPEED;
+        this.frame = 1;
+      } else if (input.right == true) {
+        vx = PLAYER_SPEED;
         this.frame = 2;
-        this.update = this.destroyWait;
-        this.ontouchstart = null;
+      } else {
+        this.frame = 0;
+      }
 
-        game.bugNum -= 1;
-        game.assets[TOUCH_SE].clone().play();
-      },
+      // 上下移動値を計算
+      if (input.up === true) vy = -PLAYER_SPEED;
+      else if (input.down === true) vy = PLAYER_SPEED;
+
+      // 斜め移動値を計算
+      if (vx !== 0 && vy !== 0) {
+        var length = Math.sqrt(vx*vx + vy*vy);  // 長さ
+        vx /= length; vy /= length; // 正規化
+        vx *= PLAYER_SPEED; vy *= PLAYER_SPEED; // 長さを調整
+      }
+
+      // 移動
+      this.moveBy(vx, vy);
+
+      // 画面からはみ出ないよう制御
+      var left = 0;
+      var right = SCREEN_WIDTH - this.width;
+      var top = 0;
+      var bottom = SCREEN_HEIGHT - this.height;
+
+      if (this.x < left) this.x = left;
+      else if (this.x > right) this.x = right;
+      if (this.y < top) this.y = top;
+      else if (this.y > bottom) this.y = bottom;
+    }
   });
   
   })();
