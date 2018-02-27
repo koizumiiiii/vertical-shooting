@@ -88,7 +88,6 @@
           bulletList.push(bullet);
           scene.addChild(bullet);
         }
-
       };
     };
 
@@ -155,7 +154,7 @@
   var Bullet = Class.create(Sprite, {
     // 初期化処理
     initialize: function() {
-      Sprite.call(this, BULLET_IMAGE, BULLET_HEIGHT);
+      Sprite.call(this, BULLET_WIDTH, BULLET_HEIGHT);
       this.image = game.assets[BULLET_IMAGE];
       this.destroy = false;
     },
