@@ -15,11 +15,18 @@
   var PLAYER_WIDTH = 32;
   var PLAYER_HEIGHT = 32;
   var PLAYER_SPEED = 8;
+  // 弾
+  var BULLET_WIDTH = 8;
+  var BULLET_HEIGHT = 16;
+  var BULLET_SPEED = 12;
+  
   // 画像
   var PLAYER_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/player.png';
+  var BULLET_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/bullet.png';
   // アセット
   var ASSETS = [
-    PLAYER_IMAGE
+    PLAYER_IMAGE,
+    BULLET_IMAGE
   ];
   
   /*
@@ -27,11 +34,18 @@
    */
   var game = null;
   var player = null;
+  var bulletList = null;
   
   
   /*
    * 汎用処理
    */
+  // Array 拡張
+  Array.prototype.erase = function(elm) {
+    var index = this.indexOf(elm);
+    this.splice(index, 1);
+    return this;
+  };
   // ランダム値生成
   var randfloat = function(min, max) {
     return Math.random() * (max - min) + min;
@@ -49,15 +63,31 @@
     // ゲーム開始時の処理
     game.onload = function() {
       var scene = game.rootScene;
-      scene.backgroundColor = "black";
+      scene.backgroundColor = "#8cc";
+
+      // アナログパッドを生成、表示
+      var pad = new Pad();
+      pad.moveTo(10, SCREEN_HEIGHT - 100);
+      //pad._element.style.zIndex = 100;
+      scene.addChild(pad);
 
       // プレイヤーを生成、表示
       player = new Player();
       player.moveTo(SCREEN_WIDTH / 2 - PLAYER_WIDTH / 2, SCREEN_HEIGHT - PLAYER_HEIGHT);
       scene.addChild(player);
 
+      // 弾リスト
+      bulletList = [];
+
       // シーン更新時の処理
       scene.onenterframe = function() {
+        // 弾を生成、表示
+        if (game.frame % 30 < 20 && game.frame % 5 == 0) {
+          var bullet = new Bullet();
+          bullet.moveTo(player.x + PLAYER_WIDTH / 2 - BULLET_WIDTH / 2, player.y - 20);
+          bulletList.push(bullet);
+          scene.addChild(bullet);
+        }
 
       };
     };
@@ -119,5 +149,25 @@
     }
   });
   
+  /*
+   * Bulletクラス
+   */
+  var Bullet = Class.create(Sprite, {
+    // 初期化処理
+    initialize: function() {
+      Sprite.call(this, BULLET_IMAGE, BULLET_HEIGHT);
+      this.image = game.assets[BULLET_IMAGE];
+      this.destroy = false;
+    },
+    // 更新処理
+    onenterframe: function() {
+      this.y -= BULLET_SPEED;
+      // 削除処理
+      if (this.y < -20 || this.destroy === true) {
+        this.parentNode.removeChild(this);
+        bulletList.erase(this);
+      }
+    },
+  });
   })();
   
