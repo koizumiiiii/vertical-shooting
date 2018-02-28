@@ -19,14 +19,21 @@
   var BULLET_WIDTH = 8;
   var BULLET_HEIGHT = 16;
   var BULLET_SPEED = 12;
+  // 敵
+  var ENEMY_WIDTH = 32;
+  var ENEMY_HEIGHT = 32;
+  var ENEMY_SPEED = 4;
+  var ENEMY_CREATE_INTERVAL = 15;
   
   // 画像
   var PLAYER_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/player.png';
+  var ENEMY_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/enemy.png';
   var BULLET_IMAGE = 'http://www.shoeisha.co.jp/book/shuchu/enchantsample/chapter04/bullet.png';
   // アセット
   var ASSETS = [
     PLAYER_IMAGE,
-    BULLET_IMAGE
+    BULLET_IMAGE,
+    ENEMY_IMAGE
   ];
   
   /*
@@ -35,6 +42,7 @@
   var game = null;
   var player = null;
   var bulletList = null;
+  var enemyList = null;
   
   
   /*
@@ -78,6 +86,8 @@
 
       // 弾リスト
       bulletList = [];
+      // 敵リスト
+      enemyList = [];
 
       // シーン更新時の処理
       scene.onenterframe = function() {
@@ -87,6 +97,16 @@
           bullet.moveTo(player.x + PLAYER_WIDTH / 2 - BULLET_WIDTH / 2, player.y - 20);
           bulletList.push(bullet);
           scene.addChild(bullet);
+        }
+        // 敵を生成、表示
+        if (game.frame % ENEMY_CREATE_INTERVAL == 0) {
+          var enemy = new Enemy();
+          var x = randfloat(0, SCREEN_WIDTH - ENEMY_WIDTH);
+          var y = -20;
+          enemy.moveTo(x, y);
+          enemyList.push(enemy);
+          scene.addChild(enemy);
+          
         }
       };
     };
@@ -167,6 +187,36 @@
         bulletList.erase(this);
       }
     },
+  });
+
+  /*
+   * Enemyクラス
+   */
+  var Enemy = Class.create(Sprite, {
+    // 初期化処理
+    initialize: function() {
+      Sprite.call(this, ENEMY_WIDTH, ENEMY_HEIGHT);
+      this.image = game.assets[ENEMY_IMAGE];
+      this.destroy = false;
+      this.time = Math.floor(randfloat(0, 60));
+    },
+    // 更新処理
+    onenterframe: function() {
+      // 移動
+      if (this.time % 60 < 50) {
+        this.x += Math.sin(this.time * 10 * Math.PI / 180) * 2;
+        this.y += ENEMY_SPEED;
+      }
+
+      // 削除処理
+      if (this.y > SCREEN_HEIGHT || this.destroy === true) {
+        this.parentNode.removeChild(this);
+        enemyList.erase(this);
+      }
+
+      // タイムを進める
+      this.time += 1;
+    }
   });
   })();
   
